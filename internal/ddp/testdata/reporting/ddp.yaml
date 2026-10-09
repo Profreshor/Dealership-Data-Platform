@@ -1,0 +1,111 @@
+ddp:
+  template_revision: 452790eeb59edaf683052a77d27d52fffe18a2ac
+  name: unit_fixture
+  display_name: Unit Fixture
+  timezone: America/Chicago
+database:
+  layers: [staging, core, mart]
+scheduler:
+  max_workers: 2
+  defaults:
+    timeout: 30s
+    retry: { max_attempts: 2, initial_delay: 1s, max_delay: 5s }
+    catchup: latest_only
+integrations:
+  synthetic:
+    kind: http
+    base_url: http://127.0.0.1:18080
+    auth: { type: api_key, header: X-API-Key, secret: SYNTHETIC_API_KEY }
+jobs:
+  sync_customers:
+    purpose: Ingest seeded proving-ground customer rows.
+    action: ingest
+    python: jobs.sync_customers
+    schedule: "* * * * *"
+    reads: [integration/synthetic]
+    deletions: ignore
+    writes: [{ target: table/synthetic.customers, mode: upsert, key: [id] }]
+  refresh_customers:
+    purpose: Refresh cached customer rows.
+    action: transform
+    model: model/core.customers
+    after: [job/sync_customers]
+tables:
+  synthetic.customers:
+    purpose: Source-shaped synthetic customer rows.
+    contract:
+      columns:
+        id: { type: text, nullable: false, description: Synthetic customer identifier. }
+        payload: { type: jsonb, nullable: false, description: Complete synthetic source record. }
+        _loaded_at: { type: timestamptz, nullable: false }
+        _source_key: { type: text, nullable: false }
+      primary_key: [id]
+models:
+  staging.customers:
+    purpose: Typed synthetic customer source rows.
+    file: models/staging/customers.sql
+    materialization: view
+    reads: [table/synthetic.customers]
+    contract:
+      columns:
+        id: { type: text, nullable: false, description: Synthetic customer identifier. }
+        name: { type: text, nullable: false, description: Synthetic customer display name. }
+      unique_key: [id]
+  core.customers:
+    purpose: Cached synthetic customer rows.
+    file: models/core/customers.sql
+    materialization: materialized_view
+    reads: [model/staging.customers]
+    contract:
+      columns:
+        id: { type: text, nullable: false, description: Synthetic customer identifier. }
+        name: { type: text, nullable: false, description: Synthetic customer display name. }
+      unique_key: [id]
+  mart.customers:
+    purpose: Synthetic customer reporting rows.
+    file: models/mart/customers.sql
+    materialization: view
+    reads: [model/core.customers]
+    contract:
+      columns:
+        id: { type: text, nullable: false, description: Synthetic customer identifier. }
+        name: { type: text, nullable: false, description: Synthetic customer display name. }
+      unique_key: [id]
+endpoints:
+  customers:
+    reads: [model/mart.customers]
+    path: /api/customers
+    policy: permission:customers.read
+    columns: [id, name]
+    filters: [name]
+    sort: [name]
+    search: [name]
+    unique_key: [id]
+    page_size: 50
+    export: { format: csv, max_rows: 10 }
+pages:
+  system:
+    label: System
+    path: /system
+    kind: system
+    policy: admin
+    order: 100
+  customers:
+    label: Customers
+    path: /customers
+    kind: table
+    endpoint: endpoint/customers
+    permission: customers.read
+    order: 1
+permissions:
+  customers.read: { description: Read synthetic customer reports. }
+health: {}
+comms: {}
+serving:
+  addr: ':8080'
+  public_url: http://localhost:5173
+  session_ttl: 8h
+deploy:
+  image: ghcr.io/profreshor/dealership-data-platform-unit-fixture
+  channel: stable
+  edge: cloudflare

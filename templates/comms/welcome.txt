@@ -1,0 +1,6 @@
+{{define "subject"}}Welcome to DDP{{end}}
+{{define "body"}}Hello {{.Name}},
+
+Set your password to activate your DDP account: {{.LoginURL}}
+This link expires in 1 hour. If you did not expect this invitation, ignore it.
+{{end}}

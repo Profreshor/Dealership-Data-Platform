@@ -1,0 +1,29 @@
+client:
+  name: Synthetic Fixture
+  industry: Dealership
+  timezone: America/Chicago
+  locations: [Chicago]
+  contacts:
+    - {name: Synthetic Operator, email: operator@example.test}
+users:
+  - {name: Synthetic Operator, email: operator@example.test, role: operator}
+systems:
+  - name: synthetic
+    kind: other
+    vendor: synthetic
+    access: api
+    docs_url: https://example.test/docs
+    credential_owner: dealership
+    entities:
+      - {name: customers, deletion_behavior: ignore}
+questions: ["Which customers are active?"]
+outputs:
+  pages: [Customers]
+  emails: [{name: daily_report, cadence: daily, recipients: [operator@example.test]}]
+communications:
+  groups: [{name: platform_ops, recipients: [it@acmedealership.example]}]
+hosting: {mode: cloud, domain: synthetic.example.test, exposure: cloudflare, repository: https://github.com/acme-example/proving-ground}
+ownership: {repository: dealership, host: dealership, domain: dealership, cloudflare: dealership, backups: dealership, integration_credentials: dealership}
+recovery: {backup_interval: 24h, backup_retention: 14d, max_data_loss: 24h, target_restore_time: 4h}
+constraints: {pii: [email], data_retention: Synthetic data only, development_data: synthetic}
+success_30_days: [First synthetic customer report is visible]

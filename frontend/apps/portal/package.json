@@ -1,0 +1,7 @@
+{
+  "name": "@ddp/portal",
+  "private": true,
+  "type": "module",
+  "scripts": { "dev": "vite", "build": "tsc --noEmit && vite build" },
+  "dependencies": { "@ddp/ui": "file:../../packages/ddp-ui", "@tanstack/react-query": "^5.62.0", "@tanstack/react-router": "^1.120.0", "react": "^19.0.0", "react-dom": "^19.0.0" }
+}

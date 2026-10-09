@@ -1,0 +1,16 @@
+[Unit]
+Description=Verify the newest DDP backup by restoring it
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/ddp
+ExecStart=/opt/ddp/bin/verify-backup.sh
+TimeoutStartSec=3h
+TimeoutStopSec=60s
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true

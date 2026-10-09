@@ -1,0 +1,10 @@
+{{define "subject"}}[{{.Severity}}] {{.Title}}{{end}}
+{{define "body"}}Alert: {{.Title}}
+
+Severity: {{.Severity}}
+Message: {{.Message}}
+Occurred: {{.OccurredAt}}
+{{if index . "Details"}}
+Details:
+{{.Details}}
+{{end}}{{end}}

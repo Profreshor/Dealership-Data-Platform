@@ -1,0 +1,5 @@
+{{define "subject"}}Digest for {{.Date}}{{end}}
+{{define "body"}}Digest for {{.Date}}
+
+{{range .Items}}- {{.Title}}: {{.Status}} ({{.URL}})
+{{end}}{{end}}

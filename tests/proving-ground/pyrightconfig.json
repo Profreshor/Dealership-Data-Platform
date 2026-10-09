@@ -1,0 +1,28 @@
+{
+  "include": [
+    "client",
+    "jobs",
+    "server.py",
+    "setup.py",
+    "prepare.py",
+    "check-smoke.py",
+    "check-init.py",
+    "check-compose.py",
+    "check-operations.py",
+    "backup-store.py",
+    "check-weekly-restore.py",
+    "verify-backup-test.py",
+    "docker-host.py",
+    "docker-host-test.py",
+    "update-test.py",
+    "publish-test.py"
+  ],
+  "extraPaths": [
+    "../..",
+    "../platform"
+  ],
+  "typeCheckingMode": "strict",
+  "pythonVersion": "3.12",
+  "venvPath": "../..",
+  "venv": ".venv"
+}

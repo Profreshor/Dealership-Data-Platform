@@ -1,0 +1,29 @@
+{
+  "name": "ddp-frontend",
+  "private": true,
+  "workspaces": [
+    "packages/ddp-ui",
+    "apps/portal"
+  ],
+  "scripts": {
+    "check": "npm run lint && npm run typecheck && npm run test && npm run build",
+    "dev": "npm run dev -w apps/portal",
+    "lint": "oxlint .",
+    "typecheck": "tsc --noEmit -p apps/portal/tsconfig.json && tsc --noEmit -p packages/ddp-ui/tsconfig.json",
+    "test": "vitest run",
+    "build": "npm run build -w apps/portal"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@tailwindcss/vite": "^4.1.0",
+    "@types/node": "26.4.1",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@vitejs/plugin-react": "^4.3.0",
+    "oxlint": "^0.15.0",
+    "typescript": "^5.7.0",
+    "vite": "^6.0.0",
+    "vitest": "^3.0.0",
+    "yaml": "2.9.0"
+  }
+}

@@ -1,0 +1,11 @@
+[Unit]
+Description=Run the DDP release updater
+
+[Timer]
+OnBootSec=2min
+OnUnitInactiveSec=5min
+RandomizedDelaySec=30sec
+AccuracySec=1min
+
+[Install]
+WantedBy=timers.target

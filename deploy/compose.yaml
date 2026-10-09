@@ -1,0 +1,119 @@
+services:
+  postgres:
+    image: postgres:17@sha256:67f41722b7a8cbdb868a44a4995c846eddfdc2973bccb291ce937dce88ad5675
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ddp
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?}
+    healthcheck:
+      test: [CMD-SHELL, "pg_isready -U postgres -d ddp"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    volumes:
+      - ${POSTGRES_DATA_PATH:-/var/lib/ddp/postgres}:/var/lib/postgresql/data
+
+  api:
+    image: ${DDP_IMAGE_DIGEST:?}
+    command: [api]
+    restart: unless-stopped
+    env_file:
+      - path: ../.env.api
+        required: false
+    environment:
+      DATABASE_URL: postgresql://ddp_api_login:${API_DATABASE_PASSWORD:?}@postgres:5432/ddp?sslmode=disable
+    ports:
+      - 127.0.0.1:8080:8080
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    user: "10001:10001"
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8080/readyz',timeout=3)"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  scheduler:
+    image: ${DDP_IMAGE_DIGEST:?}
+    command: [scheduler]
+    restart: unless-stopped
+    env_file:
+      - path: ../.env.scheduler
+        required: false
+    environment:
+      DATABASE_URL: postgresql://ddp_scheduler_login:${SCHEDULER_DATABASE_PASSWORD:?}@postgres:5432/ddp?sslmode=disable
+      JOB_DATABASE_URL: postgresql://ddp_job_login:${JOB_DATABASE_PASSWORD:?}@postgres:5432/ddp?sslmode=disable
+      BACKUP_DATABASE_URL: postgresql://ddp_backup_login:${BACKUP_DATABASE_PASSWORD:?}@postgres:5432/ddp?sslmode=disable
+      BACKUP_ACCESS_KEY_ID: ${BACKUP_ACCESS_KEY_ID:-}
+      BACKUP_SECRET_ACCESS_KEY: ${BACKUP_SECRET_ACCESS_KEY:-}
+      DDP_IMAGE_DIGEST: ${DDP_IMAGE_DIGEST:?}
+      TMPDIR: /backup-staging
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    user: "10001:10001"
+    volumes:
+      - ${BACKUP_STAGING_PATH:-/var/lib/ddp/backup-staging}:/backup-staging
+    depends_on:
+      postgres:
+        condition: service_healthy
+      api:
+        condition: service_healthy
+
+  maintenance:
+    profiles: [maintenance]
+    image: ${DDP_IMAGE_DIGEST:?}
+    command: [migrate, up]
+    environment:
+      DATABASE_URL: postgresql://ddp_owner_login:${OWNER_DATABASE_PASSWORD:?}@postgres:5432/ddp?sslmode=disable
+      BACKUP_ACCESS_KEY_ID: ${BACKUP_ACCESS_KEY_ID:-}
+      BACKUP_SECRET_ACCESS_KEY: ${BACKUP_SECRET_ACCESS_KEY:-}
+      BACKUP_AGE_IDENTITY: ${BACKUP_AGE_IDENTITY:-}
+      TMPDIR: /backup-staging
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    user: "10001:10001"
+    volumes:
+      - ${BACKUP_STAGING_PATH:-/var/lib/ddp/backup-staging}:/backup-staging
+    restart: "no"
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  cloudflared:
+    image: cloudflare/cloudflared@sha256:51c9cefcb4569df44e1ad403ab1d3d8065aa8e84339bcfc6aee75502e1140339
+    command:
+      - tunnel
+      - --no-autoupdate
+      - --metrics
+      - "127.0.0.1:20241"
+      - run
+    environment:
+      TUNNEL_TOKEN: ${TUNNEL_TOKEN:?}
+    restart: unless-stopped
+    network_mode: host
+    read_only: true
+    cap_drop: [ALL]
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+    user: "65532:65532"
+    depends_on:
+      api:
+        condition: service_healthy

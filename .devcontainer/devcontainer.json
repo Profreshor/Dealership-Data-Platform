@@ -1,0 +1,10 @@
+{
+  "name": "DDP development",
+  "dockerComposeFile": "compose.yaml",
+  "service": "dev",
+  "workspaceFolder": "/workspace",
+  "remoteUser": "vscode",
+  "forwardPorts": [8080, 5173],
+  "postCreateCommand": "uv sync --locked && npm ci --prefix frontend && go mod download",
+  "shutdownAction": "stopCompose"
+}

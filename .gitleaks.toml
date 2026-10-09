@@ -1,0 +1,6 @@
+[extend]
+useDefault = true
+
+[allowlist]
+description = "Generated dependency and build directories"
+paths = ['''(^|/)(node_modules|\.venv|\.git|build|dist|\.pytest_cache|\.ruff_cache|\.import_linter_cache)/''']

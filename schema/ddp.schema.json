@@ -1,0 +1,867 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$ref": "#/$defs/Config",
+  "$defs": {
+    "Backup": {
+      "properties": {
+        "endpoint": {
+          "type": "string"
+        },
+        "region": {
+          "type": "string",
+          "minLength": 1
+        },
+        "bucket": {
+          "type": "string",
+          "maxLength": 63,
+          "minLength": 3
+        },
+        "recipient": {
+          "type": "string",
+          "minLength": 1
+        },
+        "interval": {
+          "type": "string"
+        },
+        "retention": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "endpoint",
+        "region",
+        "bucket",
+        "recipient"
+      ]
+    },
+    "Branding": {
+      "properties": {
+        "logo": {
+          "type": "string",
+          "pattern": "^frontend/apps/portal/public/[A-Za-z0-9_./-]+[.](svg|png|jpg|jpeg|webp|gif)$"
+        },
+        "accent": {
+          "type": "string",
+          "pattern": "^#[a-fA-F0-9]{6}$"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Column": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "minLength": 1
+        },
+        "nullable": {
+          "type": "boolean"
+        },
+        "description": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "nullable"
+      ]
+    },
+    "Comms": {
+      "properties": {
+        "smtp": {
+          "$ref": "#/$defs/SMTP"
+        },
+        "groups": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Group"
+          },
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Config": {
+      "properties": {
+        "retention": {
+          "$ref": "#/$defs/Retention"
+        },
+        "ddp": {
+          "$ref": "#/$defs/Identity"
+        },
+        "database": {
+          "$ref": "#/$defs/Database"
+        },
+        "scheduler": {
+          "$ref": "#/$defs/Scheduler"
+        },
+        "integrations": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Integration"
+          },
+          "type": "object"
+        },
+        "jobs": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Job"
+          },
+          "type": "object"
+        },
+        "tables": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Table"
+          },
+          "type": "object"
+        },
+        "models": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Model"
+          },
+          "type": "object"
+        },
+        "health": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Health"
+          },
+          "type": "object"
+        },
+        "endpoints": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Endpoint"
+          },
+          "type": "object"
+        },
+        "pages": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Page"
+          },
+          "type": "object"
+        },
+        "comms": {
+          "$ref": "#/$defs/Comms"
+        },
+        "permissions": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Permission"
+          },
+          "type": "object"
+        },
+        "serving": {
+          "$ref": "#/$defs/Serving"
+        },
+        "deploy": {
+          "$ref": "#/$defs/Deploy"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "ddp",
+        "database",
+        "scheduler",
+        "integrations",
+        "jobs",
+        "tables",
+        "models",
+        "health",
+        "endpoints",
+        "pages",
+        "comms",
+        "permissions",
+        "serving",
+        "deploy"
+      ]
+    },
+    "Contract": {
+      "properties": {
+        "columns": {
+          "additionalProperties": {
+            "$ref": "#/$defs/Column"
+          },
+          "type": "object"
+        },
+        "primary_key": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "unique_key": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "columns"
+      ]
+    },
+    "Database": {
+      "properties": {
+        "layers": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "maxItems": 3,
+          "minItems": 3
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "layers"
+      ]
+    },
+    "Defaults": {
+      "properties": {
+        "timeout": {
+          "type": "string"
+        },
+        "retry": {
+          "$ref": "#/$defs/Retry"
+        },
+        "catchup": {
+          "type": "string",
+          "enum": [
+            "none",
+            "latest_only"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "timeout",
+        "retry",
+        "catchup"
+      ]
+    },
+    "Deploy": {
+      "properties": {
+        "backup": {
+          "$ref": "#/$defs/Backup"
+        },
+        "image": {
+          "type": "string",
+          "minLength": 1
+        },
+        "channel": {
+          "type": "string",
+          "enum": [
+            "stable"
+          ]
+        },
+        "edge": {
+          "type": "string",
+          "enum": [
+            "cloudflare"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "image",
+        "channel",
+        "edge"
+      ]
+    },
+    "Endpoint": {
+      "properties": {
+        "reads": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "maxItems": 1,
+          "minItems": 1
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/api/"
+        },
+        "policy": {
+          "type": "string",
+          "minLength": 1
+        },
+        "columns": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1
+        },
+        "filters": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "sort": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "search": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "unique_key": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "page_size": {
+          "type": "integer",
+          "maximum": 1000,
+          "minimum": 1
+        },
+        "shape": {
+          "type": "string",
+          "enum": [
+            "singleton"
+          ]
+        },
+        "export": {
+          "$ref": "#/$defs/Export"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "reads",
+        "path",
+        "policy",
+        "columns"
+      ]
+    },
+    "Export": {
+      "properties": {
+        "format": {
+          "type": "string",
+          "enum": [
+            "csv"
+          ]
+        },
+        "max_rows": {
+          "type": "integer",
+          "minimum": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "format",
+        "max_rows"
+      ]
+    },
+    "Group": {
+      "properties": {
+        "recipients": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "recipients"
+      ]
+    },
+    "Health": {
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "freshness",
+            "sql"
+          ]
+        },
+        "target": {
+          "type": "string"
+        },
+        "column": {
+          "type": "string"
+        },
+        "max_age": {
+          "type": "string"
+        },
+        "sql": {
+          "type": "string"
+        },
+        "severity": {
+          "type": "string",
+          "enum": [
+            "warning",
+            "critical"
+          ]
+        },
+        "notify": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "kind",
+        "severity",
+        "notify"
+      ]
+    },
+    "Idempotency": {
+      "properties": {
+        "strategy": {
+          "type": "string",
+          "enum": [
+            "provider_key",
+            "natural_key",
+            "reconcile",
+            "duplicates_acceptable"
+          ]
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "strategy"
+      ]
+    },
+    "Identity": {
+      "properties": {
+        "template_revision": {
+          "type": "string",
+          "pattern": "^[a-f0-9]{40}$"
+        },
+        "name": {
+          "type": "string",
+          "pattern": "^[a-z][a-z0-9_-]*$"
+        },
+        "display_name": {
+          "type": "string",
+          "minLength": 1
+        },
+        "timezone": {
+          "type": "string",
+          "minLength": 1
+        },
+        "branding": {
+          "$ref": "#/$defs/Branding"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "template_revision",
+        "name",
+        "display_name",
+        "timezone"
+      ]
+    },
+    "Integration": {
+      "properties": {
+        "kind": {
+          "type": "string",
+          "minLength": 1
+        },
+        "base_url": {
+          "type": "string"
+        },
+        "docs": {
+          "type": "string"
+        },
+        "auth": {
+          "$ref": "#/$defs/IntegrationAuth"
+        },
+        "settings": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "kind"
+      ]
+    },
+    "IntegrationAuth": {
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": [
+            "api_key",
+            "bearer"
+          ]
+        },
+        "header": {
+          "type": "string"
+        },
+        "secret": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "type",
+        "secret"
+      ]
+    },
+    "Job": {
+      "properties": {
+        "idempotency": {
+          "$ref": "#/$defs/Idempotency"
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "action": {
+          "type": "string",
+          "enum": [
+            "ingest",
+            "transform",
+            "check",
+            "export",
+            "notify",
+            "operate",
+            "maintain"
+          ]
+        },
+        "python": {
+          "type": "string",
+          "pattern": "^jobs(\\.[a-z_][a-z0-9_]*)+$"
+        },
+        "model": {
+          "type": "string"
+        },
+        "reads": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "writes": {
+          "items": {
+            "$ref": "#/$defs/Write"
+          },
+          "type": "array"
+        },
+        "after": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "deletions": {
+          "type": "string",
+          "enum": [
+            "ignore",
+            "tombstone",
+            "reconcile",
+            "replace"
+          ]
+        },
+        "schedule": {
+          "type": "string"
+        },
+        "timeout": {
+          "type": "string"
+        },
+        "retry": {
+          "$ref": "#/$defs/Retry"
+        },
+        "catchup": {
+          "type": "string",
+          "enum": [
+            "none",
+            "latest_only"
+          ]
+        },
+        "concurrency_key": {
+          "type": "string"
+        },
+        "tags": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "settings": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "purpose",
+        "action"
+      ]
+    },
+    "Model": {
+      "properties": {
+        "file": {
+          "type": "string",
+          "minLength": 1
+        },
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "materialization": {
+          "type": "string",
+          "enum": [
+            "view",
+            "materialized_view"
+          ]
+        },
+        "reads": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "minItems": 1
+        },
+        "contract": {
+          "$ref": "#/$defs/Contract"
+        },
+        "schedule": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "file",
+        "purpose",
+        "materialization",
+        "reads",
+        "contract"
+      ]
+    },
+    "Page": {
+      "properties": {
+        "label": {
+          "type": "string",
+          "minLength": 1
+        },
+        "path": {
+          "type": "string",
+          "pattern": "^/"
+        },
+        "kind": {
+          "type": "string",
+          "enum": [
+            "table",
+            "custom",
+            "system"
+          ]
+        },
+        "endpoint": {
+          "type": "string"
+        },
+        "permission": {
+          "type": "string"
+        },
+        "policy": {
+          "type": "string"
+        },
+        "order": {
+          "type": "integer"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "label",
+        "path",
+        "kind"
+      ]
+    },
+    "Permission": {
+      "properties": {
+        "description": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "description"
+      ]
+    },
+    "Retention": {
+      "properties": {
+        "run_logs": {
+          "type": "string"
+        },
+        "health": {
+          "type": "string"
+        },
+        "messages": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object"
+    },
+    "Retry": {
+      "properties": {
+        "max_attempts": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "initial_delay": {
+          "type": "string"
+        },
+        "max_delay": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "max_attempts",
+        "initial_delay",
+        "max_delay"
+      ]
+    },
+    "SMTP": {
+      "properties": {
+        "addr": {
+          "type": "string"
+        },
+        "from": {
+          "type": "string"
+        },
+        "username": {
+          "type": "string"
+        },
+        "password_env": {
+          "type": "string",
+          "pattern": "^[A-Z][A-Z0-9_]*$"
+        },
+        "tls": {
+          "type": "string",
+          "enum": [
+            "starttls",
+            "implicit",
+            "none"
+          ]
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "addr",
+        "from",
+        "tls"
+      ]
+    },
+    "Scheduler": {
+      "properties": {
+        "max_workers": {
+          "type": "integer",
+          "minimum": 1
+        },
+        "defaults": {
+          "$ref": "#/$defs/Defaults"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "max_workers",
+        "defaults"
+      ]
+    },
+    "Serving": {
+      "properties": {
+        "addr": {
+          "type": "string",
+          "minLength": 1
+        },
+        "public_url": {
+          "type": "string",
+          "minLength": 1
+        },
+        "session_ttl": {
+          "type": "string"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "addr",
+        "public_url",
+        "session_ttl"
+      ]
+    },
+    "Table": {
+      "properties": {
+        "purpose": {
+          "type": "string",
+          "minLength": 1
+        },
+        "contract": {
+          "$ref": "#/$defs/Contract"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "purpose",
+        "contract"
+      ]
+    },
+    "Write": {
+      "properties": {
+        "target": {
+          "type": "string"
+        },
+        "mode": {
+          "type": "string",
+          "enum": [
+            "upsert",
+            "replace",
+            "append"
+          ]
+        },
+        "key": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "additionalProperties": false,
+      "type": "object",
+      "required": [
+        "target",
+        "mode"
+      ]
+    }
+  }
+}

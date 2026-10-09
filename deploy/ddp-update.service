@@ -1,0 +1,16 @@
+[Unit]
+Description=Update the DDP deployment to the approved release
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/ddp
+ExecStart=/opt/ddp/bin/update.sh
+TimeoutStartSec=4h
+TimeoutStopSec=90s
+KillMode=control-group
+NoNewPrivileges=true
+PrivateTmp=true

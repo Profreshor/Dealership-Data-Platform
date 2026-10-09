@@ -1,0 +1,43 @@
+[project]
+name = "ddp"
+version = "0.1.0"
+description = "DDP Python job kit"
+requires-python = ">=3.12,<3.13"
+dependencies = ["psycopg[binary]>=3.2,<4"]
+
+[dependency-groups]
+dev = [
+  "import-linter>=2.3,<3",
+  "pyright>=1.1,<2",
+  "pytest>=8,<9",
+  "ruff>=0.12,<1",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.lint.isort]
+known-first-party = ["ddp", "client", "jobs"]
+
+[tool.pyright]
+include = ["ddp", "client", "jobs", "tests/python", "tests/platform", "tests/check-client-tests.py", "tests/check-smoke.py"]
+typeCheckingMode = "strict"
+venvPath = "."
+venv = ".venv"
+
+[tool.importlinter]
+root_packages = ["ddp", "client", "jobs"]
+
+[[tool.importlinter.contracts]]
+name = "jobs may depend on kit, kit never imports jobs"
+type = "forbidden"
+source_modules = ["ddp"]
+forbidden_modules = ["jobs"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests/python"]
+pythonpath = ["."]

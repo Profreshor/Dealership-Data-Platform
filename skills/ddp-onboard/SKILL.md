@@ -1,0 +1,14 @@
+---
+name: ddp-onboard
+description: Initialize a dealership's DDP repository from completed discovery facts and take it through the synthetic implementation and smoke gate.
+---
+
+Use this skill when setting up a dealership's own DDP repository from a completed discovery document the dealership has reviewed.
+
+1. Read [discovery](../../docs/discovery.md), [Architecture §21](../../ARCHITECTURE.md#21-onboarding-discovery-document-to-running-system), and both parts of completed discovery: the narrative and structured YAML. Keep credentials out of the document and require `development_data: synthetic`.
+2. Run the documented dry run and initialization with `--template <checkout>`, then verify the generated source revision as described in [initialization](../../docs/discovery.md#initialize-locally). Complete [Git setup](../../docs/discovery.md#start-the-projects-git-history) before implementation so changed-file checks have a baseline and doctor can inspect template provenance.
+3. Use the standard development container and its private Postgres service. Run `make setup`, `make build` and `build/ddp validate` in the new project checkout. Outside that container, establish a dedicated disposable Postgres instance and set `DDP_DEV_DATABASE_URL` and `TEST_DATABASE_URL` explicitly before database work. A new database on a shared cluster does not isolate roles. Use the development runtime or smoke gate’s component connections; reserve `ddp provision` for production bootstrap on its dedicated cluster.
+4. Implement the declared synthetic path using the existing [Python job](../../docs/python-jobs.md), [model](../../docs/models.md), [route](../../docs/client-routes.md), and [custom page](../../docs/custom-pages.md) guidance. Account for every requested discovery behavior, including source semantics, schedules and output fields. Validate source values before committing writes. Add focused checks for requirements the smoke path does not cover; inspect failure state before retrying so recovery cannot hide damage. A passing smoke alone does not prove discovery is satisfied.
+5. During edits, run `build/ddp check --changed --json`. Before review, run `build/ddp check --json`, then run `build/ddp smoke --json` explicitly when the full gate does not already execute the smoke path. For standalone migrations or jobs, verify `DATABASE_URL` and `JOB_DATABASE_URL` name the owned disposable database for standalone database commands, as documented in [the runtime commands](../../docs/commands.md#runtime-commands). The discovery-only project is expected to fail smoke until an ingest-to-page path exists; finish only when the path passes.
+
+The production installer, Cloudflare access, backup/restore, and deployment gates remain separate. Do not claim production readiness from local initialization.

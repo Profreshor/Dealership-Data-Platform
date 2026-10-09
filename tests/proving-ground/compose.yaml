@@ -1,0 +1,92 @@
+# Synthetic overrides of deploy/compose.yaml, never an independent runtime.
+services:
+  postgres:
+    command: [postgres, -c, log_statement=all, -c, log_min_duration_statement=0,
+              -c, log_min_duration_sample=0, -c, log_transaction_sample_rate=1]
+    volumes: !override
+      - postgres:/var/lib/postgresql/data
+  synthetic:
+    image: python:3.12-slim-trixie
+    command: [python, /fixture/server.py]
+    environment:
+      SYNTHETIC_HOST: 0.0.0.0
+      SYNTHETIC_API_KEY: synthetic-api-only
+    volumes:
+      - ../server.py:/fixture/server.py:ro
+    healthcheck:
+      test: [CMD, python, -c, "import urllib.request; urllib.request.urlopen(urllib.request.Request('http://localhost:18080/customers',headers={'X-API-Key':'synthetic-api-only'}),timeout=2)"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  smtp:
+    image: ${DDP_IMAGE_DIGEST:?}
+    user: "0:0"
+    entrypoint:
+      - python
+      - -c
+      - >-
+        import socketserver, ssl;
+        from setup import SMTPFixture;
+        tls=ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER);
+        tls.load_cert_chain('/fixture/smtp.crt','/fixture/smtp.key');
+        server=socketserver.TCPServer(('0.0.0.0',2525),SMTPFixture);
+        server.socket=tls.wrap_socket(server.socket,server_side=True);
+        server.serve_forever()
+    environment:
+      PYTHONPATH: /fixture
+    volumes:
+      - ../setup.py:/fixture/setup.py:ro
+      - ../../smtp.crt:/fixture/smtp.crt:ro
+      - ../../smtp.key:/fixture/smtp.key:ro
+    healthcheck:
+      test: [CMD, python, -c, "import smtplib,ssl; smtplib.SMTP_SSL('smtp',2525,timeout=2,context=ssl.create_default_context(cafile='/fixture/smtp.crt')).quit()"]
+      interval: 1s
+      timeout: 3s
+      retries: 30
+  setup:
+    image: ${DDP_IMAGE_DIGEST:?}
+    entrypoint: [python, /fixture/setup.py]
+    environment:
+      DATABASE_URL: postgres://postgres:${POSTGRES_PASSWORD:?}@postgres/ddp?sslmode=disable
+      OWNER_DATABASE_URL: postgres://ddp_owner_login:${OWNER_DATABASE_PASSWORD:?}@postgres/ddp?sslmode=disable
+      JOB_DATABASE_URL: postgres://ddp_job_login:${JOB_DATABASE_PASSWORD:?}@postgres/ddp?sslmode=disable
+      SCHEDULER_DATABASE_URL: postgres://ddp_scheduler_login:${SCHEDULER_DATABASE_PASSWORD:?}@postgres/ddp?sslmode=disable
+      API_DATABASE_URL: postgres://ddp_api_login:${API_DATABASE_PASSWORD:?}@postgres/ddp?sslmode=disable
+      OWNER_DATABASE_PASSWORD: ${OWNER_DATABASE_PASSWORD:?}
+      API_DATABASE_PASSWORD: ${API_DATABASE_PASSWORD:?}
+      SCHEDULER_DATABASE_PASSWORD: ${SCHEDULER_DATABASE_PASSWORD:?}
+      JOB_DATABASE_PASSWORD: ${JOB_DATABASE_PASSWORD:?}
+      BACKUP_DATABASE_PASSWORD: ${BACKUP_DATABASE_PASSWORD:?}
+      READONLY_DATABASE_PASSWORD: ${READONLY_DATABASE_PASSWORD:?}
+      SYNTHETIC_API_KEY: synthetic-api-only
+      DDP_BOOTSTRAP_PASSWORD: synthetic-browser-password-2026
+    volumes:
+      - ../setup.py:/fixture/setup.py:ro
+    depends_on:
+      postgres: { condition: service_healthy }
+      synthetic: { condition: service_healthy }
+      smtp: { condition: service_healthy }
+  api:
+    environment:
+      SSL_CERT_FILE: /fixture/smtp.crt
+    volumes:
+      - ../../smtp.crt:/fixture/smtp.crt:ro
+    ports: !override
+      - "127.0.0.1:18081:8080"
+    depends_on:
+      setup: { condition: service_completed_successfully }
+  scheduler:
+    environment:
+      SSL_CERT_FILE: /fixture/smtp.crt
+    volumes: !override
+      - backup-staging:/backup-staging
+      - ../../smtp.crt:/fixture/smtp.crt:ro
+  maintenance:
+    environment:
+      SSL_CERT_FILE: /fixture/smtp.crt
+    volumes: !override
+      - backup-staging:/backup-staging
+      - ../../smtp.crt:/fixture/smtp.crt:ro
+volumes:
+  postgres:
+  backup-staging:

@@ -1,0 +1,37 @@
+# yaml-language-server: $schema=./schema/ddp.schema.json
+ddp:
+  template_revision: 452790eeb59edaf683052a77d27d52fffe18a2ac
+  name: ddp
+  display_name: DDP
+  timezone: America/Chicago
+database:
+  layers: [staging, core, mart]
+scheduler:
+  max_workers: 4
+  defaults:
+    timeout: 5m
+    retry: { max_attempts: 2, initial_delay: 1s, max_delay: 1m }
+    catchup: latest_only
+integrations: {}
+jobs: {}
+tables: {}
+models: {}
+health: {}
+endpoints: {}
+pages:
+  system:
+    label: System
+    path: /system
+    kind: system
+    policy: admin
+    order: 100
+comms: {}
+permissions: {}
+serving:
+  addr: ':8080'
+  public_url: http://localhost:5173
+  session_ttl: 8h
+deploy:
+  image: ghcr.io/profreshor/dealership-data-platform
+  channel: stable
+  edge: cloudflare
