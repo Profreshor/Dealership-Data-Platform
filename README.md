@@ -185,13 +185,13 @@ The agent connects your systems, writes the data jobs and reports, and builds th
 portal pages, all on made-up (synthetic) data on the development computer.
 
 ```text
-Use the ddp-onboard skill in ../acme. Follow the onboarding plan in its docs
+Use the ddp-onboard skill in ../{your-dealership-name}. Follow the onboarding plan in its docs
 folder to build the jobs, models, pages and emails that answer the questions in the discovery file,
 using the DMS documentation I give you and synthetic data only. Configure
 comms.smtp in ddp.yaml for our mail provider without any password. Run build/ddp
 dev so I can look at the portal on this computer, and tell me what to review. When
 I am happy, run build/ddp check --json and build/ddp smoke --json, save the smoke
-output as ../acme-smoke-evidence.json, and open a pull request.
+output as ../{your-dealership-name}-smoke-evidence.json, and open a pull request.
 ```
 
 Review the portal at `http://localhost:5173` and tell the agent what to change.
@@ -256,7 +256,7 @@ only, until the installer has run. Clone our repo as root to /opt/ddp
 at the commit of the image our main branch last published, including the
 ddp-template tag. Create an empty Postgres data directory and a backup staging
 directory owned by 10001:10001 with mode 0700, both on the encrypted disk. Copy
-acme-smoke-evidence.json to the server. Make sure there is a non-root local
+{your-dealership-name}-smoke-evidence.json to the server. Make sure there is a non-root local
 administrator account for me with sudo and my SSH public key; the installer lets
 only that account sign in over SSH. Create /opt/ddp/.env.scheduler with mode 0600
 containing only the variable names our jobs and SMTP need, with empty values. Then
