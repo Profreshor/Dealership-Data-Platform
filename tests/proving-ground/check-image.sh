@@ -3,8 +3,8 @@ set -eu
 cd "$(dirname "$0")/../.."
 scratch=$(mktemp -d "${TMPDIR:-/tmp}/ddp-image.XXXXXX")
 project="ddp-image-$$"
-archive_image="ghcr.io/profreshor/dealership-data-platform-proving-ground:$project-archive"
-forward_image="ghcr.io/profreshor/dealership-data-platform-proving-ground:$project-forward"
+archive_image="ghcr.io/acme-example/proving-ground:$project-archive"
+forward_image="ghcr.io/acme-example/proving-ground:$project-forward"
 export DDP_TEST_IMAGE="$project:fixture"
 compose="$scratch/client/deploy/compose.yaml"
 override="$scratch/client/compose.yaml"
