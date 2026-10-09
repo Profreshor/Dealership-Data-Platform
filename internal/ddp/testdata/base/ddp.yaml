@@ -1,6 +1,6 @@
 # yaml-language-server: $schema=./schema/ddp.schema.json
 ddp:
-  template_revision: 452790eeb59edaf683052a77d27d52fffe18a2ac
+  template_revision: e76c0d007167079ef406bfc77f47750ff1c37e9d
   name: ddp
   display_name: DDP
   timezone: America/Chicago
