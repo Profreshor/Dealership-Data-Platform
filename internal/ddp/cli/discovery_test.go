@@ -67,7 +67,7 @@ func TestDiscoveryUsesCompleteRegisteredTreeWithoutRuntime(t *testing.T) {
 		"check", "config diff", "config schema", "config validate", "dev", "diagnose", "doctor", "health", "health alerts", "health evaluate", "health list", "health show", "help", "inspect",
 		"integrations", "integrations list", "integrations show", "jobs backfill", "jobs list", "jobs pause", "jobs resume", "jobs run", "jobs show", "logs",
 		"migrate status", "migrate up", "models apply", "models plan", "models refresh", "models verify", "new endpoint", "new health", "new integration", "new job", "new migration", "new model", "new page", "new route",
-		"registry", "routes", "runs cancel", "runs list", "runs show", "scheduler", "scheduler status", "search", "serve", "smoke", "sql", "status", "tables", "tables list", "tables show", "users bootstrap", "validate", "version",
+		"registry", "routes", "runs cancel", "runs list", "runs show", "scheduler", "scheduler status", "search", "serve", "smoke", "sql", "status", "tables", "tables list", "tables show", "users bootstrap", "users disable", "users update", "validate", "version",
 	} {
 		if _, exists := seen["ddp "+path]; !exists {
 			t.Errorf("missing command %s", path)
@@ -87,7 +87,7 @@ func TestDiscoveryUsesCompleteRegisteredTreeWithoutRuntime(t *testing.T) {
 	if err != nil || bytes.Contains(encoded, []byte("never-serialize")) || bytes.Contains(encoded, []byte("does-not-exist")) {
 		t.Fatal("discovery serialized runtime values", err)
 	}
-	if seen["ddp migrate up"].Risk != "write" || seen["ddp migrate status"].Risk != "read" || !strings.Contains(seen["ddp comms resend"].Confirmation, "--confirm") || !strings.Contains(seen["ddp jobs backfill"].Confirmation, "--confirm-executions") {
+	if seen["ddp migrate up"].Risk != "write" || seen["ddp migrate status"].Risk != "read" || !strings.Contains(seen["ddp comms resend"].Confirmation, "--confirm") || !strings.Contains(seen["ddp users disable"].Confirmation, "--confirm") || !strings.Contains(seen["ddp jobs backfill"].Confirmation, "--confirm-executions") {
 		t.Fatal("mutation requirements lost")
 	}
 	if seen["ddp check"].Risk != "external" || seen["ddp check"].RequiredRole != "developer" || seen["ddp config diff"].Risk != "read" || seen["ddp config diff"].RequiredRole != "local_reader" {

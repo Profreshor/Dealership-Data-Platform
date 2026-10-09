@@ -202,6 +202,28 @@ A failed commit acknowledgement reports an unknown outcome. Read the audit and
 actual database state before retrying. SQL functions can have external effects
 that a database rollback cannot undo; use credentials with the intended grants.
 
+## Portal accounts
+
+The `users` commands manage portal accounts with the account-administration grants
+of the credential in `DATABASE_URL`; [accounts](accounts.md) describes each one:
+
+```sh
+ddp users list --json
+ddp users invite --email person@example.test --role reader --json
+ddp users update USER_ID --role reader --disabled=false --json
+ddp users disable person@example.test --json
+ddp users disable provider@example.test --confirm provider@example.test --json
+ddp users roles save reader --name Reader --permission customers.read --json
+ddp users bootstrap --email owner@example.test --json
+```
+
+`users disable` accepts an email or user ID and works on any account. An operator
+account requires `--confirm` with its exact email; a missing or different
+confirmation returns exit 4 and changes nothing. The account loses its roles,
+operator flag, sessions and password links in one transaction with its
+`users.disable` audit, after which `users bootstrap` can create a replacement
+operator once no operator account remains.
+
 ## JSON contract
 
 Discovery commands return a recursive command record in the standard version 1

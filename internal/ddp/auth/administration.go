@@ -288,3 +288,107 @@ func (s *Service) SaveRole(ctx context.Context, cfg *config.Config, id, name str
 	})
 	return accountError(err)
 }
+
+// ErrAccountNotFound reports that no account matches an administration reference.
+var ErrAccountNotFound = errors.New("account not found")
+
+// ConfirmationError refuses an account change whose typed confirmation is missing
+// or names a different account. It matches audit.ErrRefused.
+type ConfirmationError struct {
+	Email    string
+	Operator bool
+}
+
+func (e ConfirmationError) Error() string {
+	return "account change requires confirmation for " + e.Email
+}
+
+func (e ConfirmationError) Unwrap() error { return audit.ErrRefused }
+
+// DisabledAccount describes the result of DisableAccount. RemainingOperators counts
+// accounts that still hold the operator flag after the change.
+type DisabledAccount struct {
+	ID                 string   `json:"id"`
+	Email              string   `json:"email"`
+	Changed            bool     `json:"changed"`
+	OperatorRemoved    bool     `json:"operator_removed"`
+	RolesRemoved       []string `json:"roles_removed"`
+	RemainingOperators int      `json:"remaining_operators"`
+}
+
+// DisableAccount disables any account by email or user ID, including an operator
+// account. It clears the operator flag and roles, revokes sessions and password
+// links, and records users.disable in the same transaction. An operator account
+// requires confirm to equal its email; a non-empty confirm must always match.
+func (s *Service) DisableAccount(ctx context.Context, ref, confirm string) (DisabledAccount, error) {
+	ref = strings.TrimSpace(ref)
+	byEmail := strings.Contains(ref, "@")
+	if byEmail {
+		ref = strings.ToLower(ref)
+	}
+	confirm = strings.ToLower(strings.TrimSpace(confirm))
+	if ref == "" || len(ref) > 254 || len(confirm) > 254 {
+		return DisabledAccount{}, ErrInvalidAccount
+	}
+	lookup := `SELECT id,email,is_admin,disabled_at IS NOT NULL FROM app.users WHERE id=$1 FOR UPDATE`
+	if byEmail {
+		lookup = `SELECT id,email,is_admin,disabled_at IS NOT NULL FROM app.users WHERE email=$1 FOR UPDATE`
+	}
+	var result DisabledAccount
+	err := pgx.BeginFunc(ctx, s.DB, func(tx pgx.Tx) error {
+		result = DisabledAccount{RolesRemoved: []string{}}
+		if _, err := tx.Exec(ctx, `SELECT pg_advisory_xact_lock(hashtextextended('ddp account administration', 0))`); err != nil {
+			return err
+		}
+		var admin, disabled bool
+		if err := tx.QueryRow(ctx, lookup, ref).Scan(&result.ID, &result.Email, &admin, &disabled); errors.Is(err, pgx.ErrNoRows) {
+			return ErrAccountNotFound
+		} else if err != nil {
+			return err
+		}
+		if (admin || confirm != "") && confirm != result.Email {
+			return ConfirmationError{Email: result.Email, Operator: admin}
+		}
+		rows, err := tx.Query(ctx, `DELETE FROM app.user_roles WHERE user_id=$1 RETURNING role_id`, result.ID)
+		if err != nil {
+			return err
+		}
+		for rows.Next() {
+			var role string
+			if err := rows.Scan(&role); err != nil {
+				rows.Close()
+				return err
+			}
+			result.RolesRemoved = append(result.RolesRemoved, role)
+		}
+		if err := rows.Err(); err != nil {
+			rows.Close()
+			return err
+		}
+		rows.Close()
+		slices.Sort(result.RolesRemoved)
+		if _, err := tx.Exec(ctx, `UPDATE app.users SET disabled_at=COALESCE(disabled_at,clock_timestamp()),is_admin=false WHERE id=$1`, result.ID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM app.sessions WHERE user_id=$1`, result.ID); err != nil {
+			return err
+		}
+		if _, err := tx.Exec(ctx, `DELETE FROM app.password_tokens WHERE user_id=$1`, result.ID); err != nil {
+			return err
+		}
+		if err := tx.QueryRow(ctx, `SELECT count(*) FROM app.users WHERE is_admin`).Scan(&result.RemainingOperators); err != nil {
+			return err
+		}
+		result.Changed = !disabled || admin || len(result.RolesRemoved) > 0
+		result.OperatorRemoved = admin
+		status := "unchanged"
+		if result.Changed {
+			status = "disabled"
+		}
+		return audit.Record(ctx, tx, "users.disable", "user/"+result.ID, map[string]any{"status": status, "operator_removed": admin, "roles_removed": result.RolesRemoved})
+	})
+	if err != nil {
+		return DisabledAccount{}, accountError(err)
+	}
+	return result, nil
+}

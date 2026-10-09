@@ -8,7 +8,8 @@ provider the dealership hires, with access the dealership grants and can revoke.
 Bootstrap refuses to run while any operator account exists, and no other command or
 page creates one. Every other account receives only the permissions its roles grant.
 An IT provider can work from an ordinary invited account with the roles the
-dealership chooses; see [removing access](#remove-access) for how to take it back.
+dealership chooses. [Removing access](#remove-access) explains how to take back an
+ordinary or operator account.
 Invite other users through the CLI or the protected HTTP endpoint:
 
 ```sh
@@ -123,31 +124,43 @@ for built-in account pages and cannot be assigned to YAML pages.
 ## Remove access
 
 To remove an ordinary account, for example one used by an IT provider the
-dealership no longer hires, a user manager disables it in **Users & roles** or runs:
+dealership no longer hires, a user manager disables it in **Users & roles**. From
+the CLI, `users disable` removes any account, including an operator account:
 
 ```sh
-ddp users update USER_ID --clear-roles --disabled=true --json
+ddp users disable person@example.test --json
+ddp users disable provider@example.test --confirm provider@example.test --json
 ```
 
-Operator accounts cannot be changed there: **Users & roles** and `ddp users update`
-refuse them. To disable an operator account, the dealership's administrator signs in
-to the server and runs a reviewed SQL write with the owner maintenance login, which
-the `maintenance` service uses by default. Run it once without `--confirm` to print
-the statement's SHA-256 fingerprint, check the statement, then run it again with
-that fingerprint:
+The argument is the account's email or user ID. The command disables the account,
+removes its roles and operator flag, and deletes its sessions and password links.
+The changes and a `users.disable` audit entry commit together. A disabled account
+cannot sign in, its existing sessions stop working immediately and it receives no
+password reset email. Disabling an operator account requires `--confirm` with the
+account's exact email; without it the command changes nothing and exits 4 with the
+required flag. An unknown account exits 1. An already disabled account succeeds and
+reports `"changed": false`. The output lists the removed roles and the number of
+operator accounts that remain. To restore a disabled account later, use
+`users update` with `--disabled=false` and its roles.
+
+Clearing the operator flag lets `users bootstrap` create a replacement, which is how
+a dealership takes back control from an IT provider: it disables the provider's
+operator account, then bootstraps its own. On the server, the dealership's
+administrator runs both with the API database login, as the installer does:
 
 ```sh
 cd /opt/ddp
-sql="UPDATE app.users SET disabled_at = now(), is_admin = false WHERE email = 'provider@example.test' AND is_admin"
 sudo docker compose --env-file .env -f deploy/compose.yaml run --rm --no-deps \
-  maintenance sql "$sql" --write --json
-sudo docker compose --env-file .env -f deploy/compose.yaml run --rm --no-deps \
-  maintenance sql "$sql" --write --confirm SHA256_FROM_PREVIOUS_OUTPUT --json
+  api users disable provider@example.test --confirm provider@example.test --json
+read -rs DDP_BOOTSTRAP_PASSWORD && export DDP_BOOTSTRAP_PASSWORD
+sudo --preserve-env=DDP_BOOTSTRAP_PASSWORD docker compose --env-file .env \
+  -f deploy/compose.yaml run --rm --no-deps -e DDP_BOOTSTRAP_PASSWORD \
+  api users bootstrap --email owner@example.test --json
+unset DDP_BOOTSTRAP_PASSWORD
 ```
 
-Check that `rows_affected` is 1. The write and its `sql.write` audit entry commit
-together. A disabled account cannot sign in, its existing sessions stop working
-immediately and it receives no password reset email. Clearing the operator flag
-lets `users bootstrap` create a replacement operator account. Remove the same
-person's server, Cloudflare, GitHub and storage access in those services as well;
-the [offboarding checklist](../skills/ddp-offboard/SKILL.md) lists them.
+Bootstrap still refuses while any other account holds the operator flag, so disable
+every operator account the provider used first. It also refuses the email of an
+active or disabled account; use a new address or a pending invitation's address. Remove the same person's server,
+Cloudflare, GitHub and storage access in those services as well; the
+[offboarding checklist](../skills/ddp-offboard/SKILL.md) lists them.

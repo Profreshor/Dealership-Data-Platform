@@ -42,7 +42,7 @@ func accountOrigin(cfg *config.Config) (string, error) {
 }
 
 func accountError(err error) error {
-	if err == nil || errors.Is(err, ErrInvalidAccount) || errors.Is(err, ErrInvalidLink) || errors.Is(err, audit.ErrRefused) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
+	if err == nil || errors.Is(err, ErrInvalidAccount) || errors.Is(err, ErrAccountNotFound) || errors.Is(err, ErrInvalidLink) || errors.Is(err, audit.ErrRefused) || errors.Is(err, context.Canceled) || errors.Is(err, context.DeadlineExceeded) {
 		return err
 	}
 	var pe *pgconn.PgError

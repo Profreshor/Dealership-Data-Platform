@@ -78,7 +78,8 @@ func addModelJob(t *testing.T, cfg *config.Config, root, name, statement string,
 
 func waitFor(t *testing.T, check func() bool) {
 	t.Helper()
-	until := time.Now().Add(12 * time.Second)
+	// Generous: shared CI runners under -race are several times slower than a laptop.
+	until := time.Now().Add(30 * time.Second)
 	for time.Now().Before(until) {
 		if check() {
 			return

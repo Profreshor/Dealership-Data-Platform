@@ -11,6 +11,7 @@ environment variables cannot override the principal.
 | `migrate.up` | `migration/<kind>/<id>` with `applied` or `failed` and the SQL checksum. |
 | `users.bootstrap` | `user/<id>` with `created`; no email, password or hash. |
 | `users.invite` | `user/<id>` with invitation status, role IDs and the HTTP actor user ID (empty for CLI). |
+| `users.disable` | `user/<id>` with `disabled` or `unchanged`, whether the operator flag was removed and the removed role IDs; no email. |
 | `users.password_set` | `user/<id>` with `changed` and link kind (`invite` or `reset`); no password or token. |
 | `models.apply`, `models.refresh` | `model/<name>` with `succeeded` or `failed` and the model-refresh record ID. |
 | Manual job operations | See [executions.md](executions.md) for run, backfill, pause, resume and cancellation records. |

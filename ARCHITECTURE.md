@@ -697,7 +697,7 @@ and permissions during session lookup. There is no permission snapshot,
 `session_version`, HMAC wrapper, Redis seam or auth-provider interface in v1.
 
 `Admin()` is reserved for operator accounts: the first is created by
-`ddp users bootstrap` at installation. Dealership managers receive explicit
+`ddp users bootstrap` at installation, and `ddp users disable` removes one. Dealership managers receive explicit
 permissions such as `users.manage`; they do not thereby gain access to job logs,
 integrations, releases or the system console. Frontend guards improve the
 interface, but server policy is always authoritative.

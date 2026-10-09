@@ -20,4 +20,12 @@ func TestAdministrationRejectsInvalidInputBeforeDatabase(t *testing.T) {
 	if err := s.SaveRole(context.Background(), nil, "role", "", nil, ""); err != ErrInvalidAccount {
 		t.Fatalf("SaveRole name error = %v", err)
 	}
+	for _, ref := range []string{"", "  ", strings.Repeat("u", 255)} {
+		if _, err := s.DisableAccount(context.Background(), ref, ""); err != ErrInvalidAccount {
+			t.Fatalf("DisableAccount(%q) error = %v", ref, err)
+		}
+	}
+	if _, err := s.DisableAccount(context.Background(), "user", strings.Repeat("c", 255)); err != ErrInvalidAccount {
+		t.Fatalf("DisableAccount confirm error = %v", err)
+	}
 }

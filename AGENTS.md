@@ -71,6 +71,13 @@ tested as a chain from an empty database, and applied migrations are immutable. 
 synthetic or small, manually sanitized fixtures; never production data. Add a focused
 test for each new failure path. There is no coverage percentage gate.
 
+Shared CI runners with `-race` are several times slower than a laptop. Tests that
+wait for the scheduler or other background work must poll with a generous deadline
+(the scheduler tests allow 30 seconds) rather than a tight one. A test that passes
+locally but times out only in CI usually needs a longer deadline, not a sleep.
+`pg_dump` and `pg_restore` (PostgreSQL 17 client tools) are required for the backup
+tests; CI installs them, and without them two backup tests fail locally.
+
 ## Commit & Pull Request Guidelines
 
 Use concise conventional subjects such as `feat:`, `fix:`, `test:` and `docs:`.
@@ -88,3 +95,15 @@ prompts for them or into protected environment files. For production investigati
 use `skills/ddp-investigate` (read-only commands with the `ddp_readonly` login) and
 only access the dealership has already granted. Use the procedures under `skills/`
 for onboarding, releases, upgrades and offboarding.
+
+Environment files: `.env.example` lists variable names only and is the one `.env*`
+file that may be committed. `ddp init` writes it into a dealership repository and
+`bin/install.sh` writes the server's `/opt/ddp/.env` from what a human types;
+integration and email secrets go in `/opt/ddp/.env.scheduler` (mode 0600), typed by
+a human. Never fill in values yourself, and never commit a populated `.env` file.
+
+Removing access: `ddp users disable <email|user-id>` disables any portal account in
+one audited transaction, ending its sessions and removing its roles. For an operator
+account it requires `--confirm <exact account email>` and clears the operator flag,
+so the dealership can then create its own operator with `ddp users bootstrap`. Only
+run it when the dealership asks; see `docs/accounts.md` and `skills/ddp-offboard`.

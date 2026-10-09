@@ -62,6 +62,7 @@ func TestAccountAdministrationCommandContracts(t *testing.T) {
 	}{
 		{[]string{"users", "list"}, "none"},
 		{[]string{"users", "update"}, "transactional: users.update"},
+		{[]string{"users", "disable"}, "transactional: users.disable"},
 		{[]string{"users", "roles", "save"}, "transactional: roles.save"},
 	} {
 		var out, errOut bytes.Buffer
@@ -84,6 +85,8 @@ func TestAccountAdministrationCommandContracts(t *testing.T) {
 		}
 	}
 	for _, args := range [][]string{
+		{"users", "disable"},
+		{"users", "disable", "one", "two"},
 		{"users", "update", "person"},
 		{"users", "update", "person", "--disabled=false"},
 		{"users", "update", "person", "--disabled=false", "--role", "reader", "--clear-roles"},
